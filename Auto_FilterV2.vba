@@ -108,7 +108,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
             Next col
             Debug.Print "Totals row added for columns D-M"
             
-            ' Copy totals to "Progress reports" sheet with error check
+            ' Copy totals to "Progress reports" sheet, Table 5, with error check
             Dim wsProgress As Worksheet
             On Error Resume Next
             Set wsProgress = ThisWorkbook.Sheets("Progress reports")
@@ -118,17 +118,27 @@ Private Sub Worksheet_Change(ByVal Target As Range)
             End If
             On Error GoTo ErrorHandler
             
-            ' Find the last row in "Progress reports" and add new row
-            Dim progressLastRow As Long
-            progressLastRow = wsProgress.Cells(wsProgress.Rows.Count, 1).End(xlUp).row + 1
+            ' Reference Table 5 in Progress reports
+            Dim tbl As ListObject
+            On Error Resume Next
+            Set tbl = wsProgress.ListObjects("Table5")
+            If tbl Is Nothing Then
+                MsgBox "Table 'Table5' not found in 'Progress reports' sheet. Check the table name.", vbCritical
+                GoTo CleanUp
+            End If
+            On Error GoTo ErrorHandler
             
-            ' Add current date to column A
-            wsProgress.Cells(progressLastRow, 1).Value = Date ' Today’s date
+            ' Add a new row to Table 5
+            Dim newRow As ListRow
+            Set newRow = tbl.ListRows.Add
             
-            ' Copy totals from D-M (4-13) to Progress reports B-K (2-11)
-            wsProgress.Range(wsProgress.Cells(progressLastRow, 2), wsProgress.Cells(progressLastRow, 11)).Value = _
+            ' Add current date to column 1 (A) of the new row
+            newRow.Range.Cells(1, 1).Value = Date ' Today’s date
+            
+            ' Copy totals from D-M (4-13) in Daily ar report to columns 2-11 (B-K) in Table 5
+            newRow.Range.Cells(1, 2).Resize(1, 10).Value = _
                 ws.Range(ws.Cells(lastRow, 4), ws.Cells(lastRow, 13)).Value
-            Debug.Print "Totals copied to Progress reports, row " & progressLastRow & ", columns B-K"
+            Debug.Print "Totals copied to Progress reports, Table 5, row " & newRow.Range.row & ", columns B-K"
             
             ' XLOOKUP: Match column B in "Notes" to column B in "Daily ar report", return column L to "Notes" column O
             Dim wsNotes As Worksheet
